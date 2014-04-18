@@ -26,7 +26,7 @@ module Puppet::Parser::Functions
     rescue Errno::ENOENT 
       raise Puppet::ParseError, "Given path to db doesn't exist: path=#{path}" 
 
-    rescue Psych::SyntaxError => e
+    rescue YAML::Error => e
       raise Puppet::ParseError, "Given db is invalid YAML: path=#{path}"
 
     rescue StandardError => e
