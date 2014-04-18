@@ -1,0 +1,36 @@
+require 'yaml'
+ 
+module Puppet::Parser::Functions
+  newfunction(:generate_role, :type => :rvalue) do |args|
+    fact      = args[0]
+    path      = args[1]
+    default   = args[2]   
+ 
+    begin
+      db = YAML.load_file(path)
+
+      raise Puppet::ParseError, "Given db is invalid YAML: path=#{path}" unless db.kind_of?(Hash)
+
+      found = db.detect { |key,value| value.include?(fact) }
+ 
+      if found 
+        found.first    
+      else
+        if default
+          default 
+        else
+          raise Puppet::ParseError, "Given host isn't found: host=#{fact}, path=#{path}"     
+        end
+      end
+
+    rescue Errno::ENOENT 
+      raise Puppet::ParseError, "Given path to db doesn't exist: path=#{path}" 
+
+    rescue Psych::SyntaxError => e
+      raise Puppet::ParseError, "Given db is invalid YAML: path=#{path}"
+
+    rescue StandardError => e
+      raise Puppet::ParseError, "UnknownError: #{e.class} - #{e.message} - #{e.backtrace}"
+    end
+  end
+end
