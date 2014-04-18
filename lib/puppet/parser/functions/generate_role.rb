@@ -5,7 +5,14 @@ module Puppet::Parser::Functions
     fact      = args[0]
     path      = args[1]
     default   = args[2]   
- 
+
+    yaml_error_class = if RUBY_VERSION == '1.8.7'
+                         YAML::Error
+                       else
+                         YAML::SyntaxError
+                       end
+
+
     begin
       db = YAML.load_file(path)
 
@@ -26,7 +33,7 @@ module Puppet::Parser::Functions
     rescue Errno::ENOENT 
       raise Puppet::ParseError, "Given path to db doesn't exist: path=#{path}" 
 
-    rescue YAML::Error => e
+    rescue yaml_error_class => e
       raise Puppet::ParseError, "Given db is invalid YAML: path=#{path}"
 
     rescue StandardError => e
