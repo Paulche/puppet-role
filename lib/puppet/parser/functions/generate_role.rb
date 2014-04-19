@@ -12,19 +12,29 @@ module Puppet::Parser::Functions
                          YAML::SyntaxError
                        end
 
-
     begin
       db = YAML.load_file(path)
 
       raise Puppet::ParseError, "Given db is invalid YAML: path=#{path}" unless db.kind_of?(Hash)
 
-      found = db.detect { |key,value| value.include?(fact) }
+      result = db.reduce([]) do |acc,el|
+        case el.last
+        when Hash
+          if found = el.last.detect { |_,value| value.include?(fact) }
+            break [el.first, found.first]
+          end
+        when Array
+          break [el.first] if el.last.detect(&fact.method(:==))
+        else
+          raise Puppet::ParseError, "Given db is invalid YAML: path=#{path}"
+        end
+      end
  
-      if found 
-        found.first    
+      if result 
+        result    
       else
         if default
-          default 
+          [default]
         else
           raise Puppet::ParseError, "Given host isn't found: host=#{fact}, path=#{path}"     
         end

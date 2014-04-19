@@ -15,21 +15,54 @@ describe "generate_role()" do
     YAML.expects(:load_file).with(path).returns(db) unless example.metadata[:skip_before] 
   end
 
-  context 'Successful cases' do 
-    it 'should return given role' do 
-      expect(scope.function_generate_role([fqdn_included,path])).to eq(role)
+  context 'Successful cases:' do 
+    it 'should return array' do 
+      expect(scope.function_generate_role([fqdn_included,path])).to be_kind_of(Array)
     end
 
-    it 'should return default role' do 
-      expect(scope.function_generate_role([fqdn_excluded,path,role_default])).to eq(role_default)
+    context 'only role:' do 
+      it 'should return given role' do 
+        expect(scope.function_generate_role([fqdn_included,path])).to eq([role])
+      end
+
+      it 'should return default role' do 
+        expect(scope.function_generate_role([fqdn_excluded,path,role_default])).to eq([role_default])
+      end
+    end
+
+    context 'with role and subrole:' do 
+      let(:subrole)         { 'ipvs' }
+      let(:db)              { { role => { subrole => [fqdn_included] } } }
+
+      it 'should return given role' do 
+        array = scope.function_generate_role([fqdn_included,path])
+
+        expect(array.first).to eq(role)
+      end
+
+      it 'should return given subrole' do 
+        array = scope.function_generate_role([fqdn_included,path])
+
+        expect(array.last).to eq(subrole)
+      end
     end
   end
 
-  context 'Failures' do 
-    it "should raise Puppet::ParseError when host isn't included in DB and no default value given" do 
-      expect { scope.function_generate_role([fqdn_excluded,path]) }.to raise_error(Puppet::ParseError, /Given host isn't found/)
+  context 'Failures:' do 
+    context 'only role:' do 
+      it "should raise Puppet::ParseError when host isn't included in DB and no default value given" do 
+        expect { scope.function_generate_role([fqdn_excluded,path]) }.to raise_error(Puppet::ParseError, /Given host isn't found/)
+      end
     end
 
+    context 'with role and subrole:' do 
+      let(:db)              { { 'fakerole' => { 'fakesubrole' => [fqdn_included] } } }
+
+      it "should raise Puppet::ParseError when host isn't included in DB and no default value given (subrole structure)" do 
+        expect { scope.function_generate_role([fqdn_excluded, path]) }.to raise_error(Puppet::ParseError, /Given host isn't found/)
+      end
+    end
+      
     it "should raise Puppet::ParserError when path doesn't exist", :skip_before => true do 
       expect { scope.function_generate_role(['fake','/this_path_doesnt_exist']) }.to raise_error(Puppet::ParseError, /Given path to db doesn't exist/)
     end
