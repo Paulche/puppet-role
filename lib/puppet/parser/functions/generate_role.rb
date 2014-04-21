@@ -24,7 +24,20 @@ module Puppet::Parser::Functions
             break [el.first, found.first]
           end
         when Array
-          break [el.first] if el.last.detect(&fact.method(:==))
+          found = el.last.reduce([]) do |acc, element|
+            case element 
+            when Hash
+              if found = element.detect { |_,value| value.include?(fact) }
+                break [el.first, found.first]
+              end
+            when String
+              break [el.first] if element == fact
+            else
+              raise Puppet::ParseError, "Given db is invalid YAML: path=#{path}"
+            end
+          end
+
+          break(found) if found
         else
           raise Puppet::ParseError, "Given db is invalid YAML: path=#{path}"
         end
@@ -45,9 +58,6 @@ module Puppet::Parser::Functions
 
     rescue yaml_error_class => e
       raise Puppet::ParseError, "Given db is invalid YAML: path=#{path}"
-
-    rescue StandardError => e
-      raise Puppet::ParseError, "UnknownError: #{e.class} - #{e.message} - #{e.backtrace}"
     end
   end
 end

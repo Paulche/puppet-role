@@ -45,6 +45,27 @@ describe "generate_role()" do
 
         expect(array.last).to eq(subrole)
       end
+
+      context 'Real use cases' do 
+        let(:db)              { {role =>[fqdn_excluded, {subrole => [fqdn_included]}]} }
+          
+        it 'should return role for included fqdn' do 
+          expect(scope.function_generate_role([fqdn_included, path]).first).to eq(role)
+        end
+        
+        it 'should return subrole for included fqdn' do 
+          expect(scope.function_generate_role([fqdn_included, path]).last).to eq(subrole)
+        end
+        
+        it 'should return role for excluded fqdn' do 
+          expect(scope.function_generate_role([fqdn_excluded, path]).first).to eq(role)
+        end
+        
+        it 'should return array with single item role for excluded fqdn' do 
+          expect(scope.function_generate_role([fqdn_excluded, path])).to have(1).items
+        end
+      end
+
     end
   end
 
@@ -86,4 +107,5 @@ describe "generate_role()" do
       end
     end
   end
+
 end
